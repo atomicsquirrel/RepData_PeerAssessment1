@@ -4,22 +4,172 @@ output:
   html_document:
     keep_md: true
 ---
+This document relates to the project "Peer Assessment 1" as part of the Coursera course 
+"Reproducible Research". 
 
+## Data
+The data for this assignment - including explanatory documentation - is available 
+via this [Github repository](http://github.com/rdpeng/RepData_PeerAssessment1). This
+repository was forked to my own Github account and subsequently cloned to the local disk. 
+As a further prepatory step, the current working directory was set to same the location 
+the repository was cloned to. Any commands following will therefore be relative to the 
+parent directory of the cloned repository.
 
 ## Loading and preprocessing the data
-
-
+The data is contained in a zipped archive which requires an additional step before the table can be read:
+```{r}
+  tmp_activity <- unzip("./activity.zip")
+  activity <- read.csv(tmp_activity)
+```
 
 ## What is mean total number of steps taken per day?
+By default, "read.csv" reads the date as a factor with 61 levels for the different dates. 
+Use "ddply" to determine group-wise summary 
+```{r}
+  library(plyr)
+  sum_of_steps_per_day <- ddply(activity, .(date),  summarise, sum = sum(steps,na.rm=TRUE))
+```
+and show the histogram of the data:
+```{r, fig.width=4,fig.height=4,fig.align="center",echo=FALSE}
+  hist(sum_of_steps_per_day$sum,
+       breaks=20,
+       xlab="Sum of steps",
+       ylab="Frequency",
+       main="Number of steps taken each day",
+       border="black",
+       col="lightblue",
+       cex.main=1.0)
+```
 
-
+Now that we have the total number of steps taken each day, we can calculate the mean and the median of this distribution:
+```{r}
+  mean(sum_of_steps_per_day$sum,na.rm=TRUE)
+  median(sum_of_steps_per_day$sum,na.rm=TRUE)
+```
 
 ## What is the average daily activity pattern?
 
-
+Using a similar approach as above, we summarise the data according to the the intervals using the mean:
+```{r}
+  mean_of_steps_per_interval <- ddply(activity, .(interval),  summarise, mean = mean(steps,na.rm=TRUE))
+```
+This can be plotted as:
+```{r, fig.width=4,fig.height=4,fig.align="center",echo=FALSE}
+  plot(mean_of_steps_per_interval$interval,
+       mean_of_steps_per_interval$mean,
+       "l",
+       xlab="Interval",
+       ylab="Average number of steps",
+       main="Average number of steps taken \n across all days in a given intreval",
+       cex.main=1.0)
+```
+The plot reveals a significant spike around the 800 interval. More precisely, the peak 
+appears at interval:
+```{r}
+  mean_of_steps_per_interval$interval[mean_of_steps_per_interval$mean == max(mean_of_steps_per_interval$mean)]
+```
 
 ## Imputing missing values
+A number of days/intervals show missing values in the original data set (coded a "NA"). This 
+applies to a total number of:
+```{r}
+  sum(!complete.cases(activity))
+```
 
+We can also make certain that only the steps variable shows "NAs":
+```{r}
+  sum(!complete.cases(activity$steps))
+  sum(!complete.cases(activity$date))
+  sum(!complete.cases(activity$interval))
+```
 
+In order to brige the gaps introduced by these missing values, we can replace the "NAs" with 
+values infered from the rest of the data. Here we chose to replace "NAs" in the steps
+variable with the median of the steps taken across all days for the same interval the "NAs" 
+appear in. 
+
+```{r}
+  median_of_steps_per_interval <- ddply(activity, .(interval),  
+                                        summarise, median = median(steps,na.rm=TRUE))
+  activity_clean <- activity
+  myfunc <- function(x){
+    activity_clean$steps[x] <- 
+      median_of_steps_per_interval$median[median_of_steps_per_interval$interval == x]
+  }
+  activity_clean$steps[!complete.cases(activity_clean)] <- 
+    sapply(activity$interval[!complete.cases(activity)], myfunc)
+```
+With this new data set we can recalculate the total number of steps taken per day
+```{r}
+  sum_of_steps_per_day_clean <- ddply(activity_clean, .(date),  summarise, sum = sum(steps,na.rm=TRUE))
+```
+and compare the histogram to the original plot:
+```{r, fig.width=8,fig.height=4,fig.align="center",echo=FALSE}
+  par(mfcol=c(1,2))
+  hist(sum_of_steps_per_day_clean$sum,
+       breaks=20,
+       xlab="Sum of steps",
+       ylab="Frequency",
+       main="Number of steps taken each day\n('clean' data)",
+       border="black",
+       col="lightblue",
+       cex.main=1.0)
+  hist(sum_of_steps_per_day$sum,
+       breaks=20,
+       xlab="Sum of steps",
+       ylab="Frequency",
+       main="Number of steps taken each day\n(original data)",
+       border="black",
+       col="lightblue",
+       cex.main=1.0)
+```
+We can see that slight differences have been introduced, mainly for the bins at the left end 
+of the distributions. The mean value of steps per day over all days increased slightly while the median remained the same:
+```{r}
+  mean(sum_of_steps_per_day_clean$sum,na.rm=TRUE)
+  median(sum_of_steps_per_day_clean$sum,na.rm=TRUE)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+To answer this question, we have to create a new variable encoding whether or not a given date is on a weekday or on a week end. First, create a boolean variable showing if we are 
+on a weekday or not:
+```{r}
+  activity$weekday <- !(weekdays(as.Date(activity$date)) %in% c('Saturday','Sunday'))
+```
+Then we can convert this into a factor variable:
+```{r}
+  activity$weekday <- factor(activity$weekday,labels=c("weekend","weekday"))
+```
+Now we can visually compare the activity on weekdays with that on weekends:
+```{r,fig.width=8,fig.height=8,fig.align="center",echo=FALSE}
+  mean_of_steps_per_interval_wd <- ddply(activity[activity$weekday=="weekday",], .(interval), 
+                                         summarise, mean = mean(steps,na.rm=TRUE))  
+  mean_of_steps_per_interval_we <- ddply(activity[activity$weekday=="weekend",], .(interval), 
+                                         summarise, mean = mean(steps,na.rm=TRUE))  
+  par(mfcol=c(2,1))  
+  par(mar = c(0, 0, 0, 0))
+  par(oma = c(4, 4, 4, 0.5))
+  par(mgp = c(2, 0.6, 0))
+  par(cex.main=1.0)
+  plot(mean_of_steps_per_interval_wd$interval,
+       mean_of_steps_per_interval_wd$mean,
+       "l",
+       axes=FALSE)
+  axis(1,labels=FALSE,tick=TRUE)
+  axis(2)
+  title("Average number of steps taken across all days in a given intreval",line=1,outer=TRUE)
+  box()
+  mtext("Weekdays", side = 3, line = -2, adj = 0.95, cex = 1.0)
+  plot(mean_of_steps_per_interval_we$interval,
+       mean_of_steps_per_interval_we$mean,
+       "l",
+       axes=FALSE)
+  axis(1)
+  axis(2)
+  box()
+  mtext("Interval", side = 1, outer = TRUE, cex = 1.0, line = 2.2)
+  mtext("Average number of steps", side = 2, outer = TRUE, cex = 1.0, line = 2.2)
+  mtext("Weekends", side = 3, line = -2, adj = 0.95, cex = 1.0)
+```
+
+
