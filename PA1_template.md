@@ -27,6 +27,18 @@ Use "ddply" to determine group-wise summary
   sum_of_steps_per_day <- ddply(activity, .(date),  summarise, sum = sum(steps,na.rm=TRUE))
 ```
 and show the histogram of the data:
+
+```r
+  hist(sum_of_steps_per_day$sum,
+       breaks=20,
+       xlab="Sum of steps",
+       ylab="Frequency",
+       main="Number of steps taken each day",
+       border="black",
+       col="lightblue",
+       cex.main=1.0)
+```
+
 <img src="PA1_template_files/figure-html/unnamed-chunk-3-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 Now that we have the total number of steps taken each day, we can calculate the mean and the median of this distribution:
@@ -55,6 +67,17 @@ Using a similar approach as above, we summarise the data according to the the in
   mean_of_steps_per_interval <- ddply(activity, .(interval),  summarise, mean = mean(steps,na.rm=TRUE))
 ```
 This can be plotted as:
+
+```r
+  plot(mean_of_steps_per_interval$interval,
+       mean_of_steps_per_interval$mean,
+       "l",
+       xlab="Interval",
+       ylab="Average number of steps",
+       main="Average number of steps taken \n across all days in a given intreval",
+       cex.main=1.0)
+```
+
 <img src="PA1_template_files/figure-html/unnamed-chunk-6-1.png" title="" alt="" style="display: block; margin: auto;" />
 The plot reveals a significant spike around the 800 interval. More precisely, the peak 
 appears at interval:
@@ -128,6 +151,27 @@ With this new data set we can recalculate the total number of steps taken per da
   sum_of_steps_per_day_clean <- ddply(activity_clean, .(date),  summarise, sum = sum(steps,na.rm=TRUE))
 ```
 and compare the histogram to the original plot:
+
+```r
+  par(mfcol=c(1,2))
+  hist(sum_of_steps_per_day_clean$sum,
+       breaks=20,
+       xlab="Sum of steps",
+       ylab="Frequency",
+       main="Number of steps taken each day\n('clean' data)",
+       border="black",
+       col="lightblue",
+       cex.main=1.0)
+  hist(sum_of_steps_per_day$sum,
+       breaks=20,
+       xlab="Sum of steps",
+       ylab="Frequency",
+       main="Number of steps taken each day\n(original data)",
+       border="black",
+       col="lightblue",
+       cex.main=1.0)
+```
+
 <img src="PA1_template_files/figure-html/unnamed-chunk-12-1.png" title="" alt="" style="display: block; margin: auto;" />
 We can see that slight differences have been introduced, mainly for the bins at the left end 
 of the distributions. The mean value of steps per day over all days increased slightly while the median remained the same:
@@ -161,6 +205,38 @@ Then we can convert this into a factor variable:
   activity$weekday <- factor(activity$weekday,labels=c("weekend","weekday"))
 ```
 Now we can visually compare the activity on weekdays with that on weekends:
+
+```r
+  mean_of_steps_per_interval_wd <- ddply(activity[activity$weekday=="weekday",], .(interval), 
+                                         summarise, mean = mean(steps,na.rm=TRUE))  
+  mean_of_steps_per_interval_we <- ddply(activity[activity$weekday=="weekend",], .(interval), 
+                                         summarise, mean = mean(steps,na.rm=TRUE))  
+  par(mfcol=c(2,1))  
+  par(mar = c(0, 0, 0, 0))
+  par(oma = c(4, 4, 4, 0.5))
+  par(mgp = c(2, 0.6, 0))
+  par(cex.main=1.0)
+  plot(mean_of_steps_per_interval_wd$interval,
+       mean_of_steps_per_interval_wd$mean,
+       "l",
+       axes=FALSE)
+  axis(1,labels=FALSE,tick=TRUE)
+  axis(2)
+  title("Average number of steps taken across all days in a given intreval",line=1,outer=TRUE)
+  box()
+  mtext("Weekdays", side = 3, line = -2, adj = 0.95, cex = 1.0)
+  plot(mean_of_steps_per_interval_we$interval,
+       mean_of_steps_per_interval_we$mean,
+       "l",
+       axes=FALSE)
+  axis(1)
+  axis(2)
+  box()
+  mtext("Interval", side = 1, outer = TRUE, cex = 1.0, line = 2.2)
+  mtext("Average number of steps", side = 2, outer = TRUE, cex = 1.0, line = 2.2)
+  mtext("Weekends", side = 3, line = -2, adj = 0.95, cex = 1.0)
+```
+
 <img src="PA1_template_files/figure-html/unnamed-chunk-16-1.png" title="" alt="" style="display: block; margin: auto;" />
 
 
