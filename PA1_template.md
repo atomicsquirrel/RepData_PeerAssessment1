@@ -222,7 +222,7 @@ Now we can visually compare the activity on weekdays with that on weekends:
        axes=FALSE)
   axis(1,labels=FALSE,tick=TRUE)
   axis(2)
-  title("Average number of steps taken across all days in a given intreval",line=1,outer=TRUE)
+  title("Average number of steps taken across all days in a given interval",line=1,outer=TRUE)
   box()
   mtext("Weekdays", side = 3, line = -2, adj = 0.95, cex = 1.0)
   plot(mean_of_steps_per_interval_we$interval,
