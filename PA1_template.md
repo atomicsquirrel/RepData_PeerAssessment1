@@ -74,7 +74,7 @@ This can be plotted as:
        "l",
        xlab="Interval",
        ylab="Average number of steps",
-       main="Average number of steps taken \n across all days in a given intreval",
+       main="Average number of steps taken \n across all days in a given interval",
        cex.main=1.0)
 ```
 
